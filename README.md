@@ -1,86 +1,54 @@
 # ACSRAG (Adaptive Corrective Self-RAG) 🚀
 
-ACSRAG is a full-stack, AI-powered document intelligence platform that allows users to upload PDF documents and interrogate them using advanced Retrieval-Augmented Generation (RAG) techniques.
+ACSRAG is a full-stack, AI-powered document intelligence platform that allows users to upload PDF documents and interrogate them using advanced **Adaptive Corrective Retrieval-Augmented Generation (Self-RAG)** techniques.
 
-Unlike traditional RAG pipelines, ACSRAG employs an **Adaptive Corrective Self-RAG** architecture. It evaluates retrieval confidence, explicitly extracts claims, flags unsupported claims, and performs iterative retrieval passes to ensure the highest possible factual accuracy. 
+The application has been unified into a single **Next.js Fullstack Application**, combining the interactive frontend and intelligent backend API routes into one seamless project. Running `npm run dev` starts the entire system on a single port.
 
 ---
 
 ## 🌟 Key Features
 
-* **Advanced RAG Pipeline**: Intelligent claim extraction and verification.
-* **Iterative Retrieval**: If the model determines that the retrieved context is insufficient to confidently answer the query, it automatically re-queries the vector database.
-* **Process Trace UI**: A sleek, dynamic React frontend that provides a real-time trace of the AI's "thought process" (Intent detection, Vector/BM25 scores, Context compression, and Final verification).
-* **PDF Knowledge Base**: Upload multiple PDFs to build a dynamic context window.
-* **Resizing Workspace**: A drag-to-resize sidebar allows you to customize your workspace layout dynamically.
-* **Persistent Sessions**: Chat limits and sessions are securely managed via HTTP-only cookies and local JSON persistence, surviving server restarts.
+* **Unified Fullstack Architecture**: Frontend UI and Backend APIs (`/api/upload`, `/api/documents`, `/api/chat`) run together under Next.js.
+* **Advanced Adaptive Self-RAG Pipeline**:
+  * Intent classification (Factual / Analytical / Conversational).
+  * Hybrid retrieval with Vector Cosine Similarity and BM25 term scoring.
+  * Context extraction & grounding with Google Gemini.
+  * Automated claim extraction and factuality verification.
+* **Interactive Process Trace**: Real-time visual breakdown of the model's retrieval and reasoning steps (Vector matches, BM25 scores, RRF fusion, Context compression, and Self-RAG verification).
+* **Dynamic Knowledge Base**: Upload and manage multiple PDF documents with instant vector indexing.
+* **Glassmorphism UI**: High-fidelity dark mode interface with resizable workspace and animated feedback indicators.
+* **Session Rate Limiting**: Built-in cookie session tracking limiting demo usage to 3 questions per session.
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Frontend**: React 19, Vite, Lucide-React, Axios, Vanilla CSS (Glassmorphism design).
-* **Backend**: FastAPI, Uvicorn, Python.
-* **AI & Embeddings**: LangChain, Google GenAI, FAISS (Vector Store), HuggingFace Embeddings.
+* **Framework**: Next.js 15 (App Router), React 19
+* **Styling**: Vanilla CSS (Modern Glassmorphism & Micro-animations)
+* **Icons**: Lucide React
+* **AI & LLM**: Google Gemini API (`@google/generative-ai`)
+* **Document Ingestion**: `pdf-parse` & in-memory vector store
 
 ---
 
-## 🚀 Getting Started (Local Development)
+## 🚀 Getting Started
 
-### Prerequisites
+### 1. Prerequisites
 * **Node.js** (v18+)
-* **Python** (3.10+)
+* A **Google Gemini API Key** (set in `.env` or `.env.local` as `GOOGLE_API_KEY=...`)
 
-### 1. Clone & Setup Backend
-Navigate to the root directory and set up your Python virtual environment.
-
-```bash
-# Activate your virtual environment (Windows)
-.\venv\Scripts\activate
-
-# Install the Python dependencies
-pip install -r requirements.txt
-```
-
-Start the FastAPI backend:
-```bash
-# Ensure PYTHONPATH is set so the `acsrag` module resolves correctly
-$env:PYTHONPATH = "."
-$env:PYTHONUNBUFFERED="1"
-
-# Run the backend server
-python backend/app.py
-```
-*The API will be available at `http://localhost:8000`.*
-
-### 2. Setup Frontend
-Open a new terminal window and navigate to the frontend directory.
+### 2. Installation & Run
+From the project root directory:
 
 ```bash
-cd frontend
-
-# Install Node dependencies
+# Install dependencies
 npm install
 
-# Start the Vite development server
+# Start the fullstack development server (Frontend + Backend)
 npm run dev
 ```
-*The frontend will be available at `http://localhost:3000` (or `5173`).*
 
----
-
-## 🌍 Deployment
-
-ACSRAG is configured to be easily deployed on platforms like **Render**.
-
-### Backend (Web Service)
-* **Build Command**: `pip install -r requirements.txt`
-* **Start Command**: `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
-
-### Frontend (Static Site)
-* **Build Command**: `npm install && npm run build`
-* **Publish Directory**: `dist`
-* **Environment Variables**: Set `VITE_API_URL` to your deployed backend's URL (e.g., `https://your-backend.onrender.com/api`).
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
@@ -88,19 +56,25 @@ ACSRAG is configured to be easily deployed on platforms like **Render**.
 
 ```text
 ACSRAG/
-├── acsrag/                 # Core AI architecture & LangGraph logic
-│   ├── core/               # State models, LLM wrappers, utils
-│   ├── graphs/             # RAG graph orchestration (iterative phases)
-│   └── nodes/              # Granular operations (retrieval, grading, rewriting)
-├── backend/                # FastAPI backend serving the AI and endpoints
-│   ├── app.py              # Main API entrypoint
-│   └── documents/          # Uploaded PDF storage
-├── frontend/               # Vite + React frontend
-│   ├── src/
-│   │   ├── App.jsx         # Main UI layout and logic
-│   │   └── index.css       # Glassmorphism styling & animations
-├── usage_counts.json       # Cookie-based session tracking for rate limits
-└── requirements.txt        # Full Python dependency manifest
+├── app/
+│   ├── api/
+│   │   ├── chat/route.js              # RAG inference & verification endpoint
+│   │   ├── documents/
+│   │   │   ├── route.js              # List uploaded documents
+│   │   │   └── [filename]/route.js   # Delete document endpoint
+│   │   └── upload/route.js           # Multi-file PDF upload & chunker
+│   ├── globals.css                   # Glassmorphism dark styles & animations
+│   ├── layout.jsx                    # Root layout & Inter font
+│   └── page.jsx                      # Unified ACSRAG chat & workspace UI
+├── lib/
+│   ├── pdf-parser.js                 # PDF text extraction & chunking
+│   ├── vector-store.js               # Embeddings & similarity search
+│   └── rag-engine.js                 # Self-RAG pipeline & process trace
+├── documents/                        # Uploaded PDF document storage
+├── package.json                      # Unified npm scripts & dependencies
+├── next.config.mjs                   # Next.js configuration
+├── usage_counts.json                 # Demo rate limit counter
+└── .env                              # API keys (GOOGLE_API_KEY)
 ```
 
 ---
