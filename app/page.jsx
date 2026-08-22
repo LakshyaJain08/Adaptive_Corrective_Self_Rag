@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import {
   UploadCloud,
@@ -23,6 +23,15 @@ export default function Home() {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = (behavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   useEffect(() => {
     fetchDocuments();
@@ -478,6 +487,8 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          <div ref={messagesEndRef} style={{ height: '1px', visibility: 'hidden' }} />
         </div>
 
         <form className="input-area" onSubmit={handleSendMessage}>

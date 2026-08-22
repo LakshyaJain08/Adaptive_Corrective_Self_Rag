@@ -13,7 +13,10 @@ import hashlib
 
 app = FastAPI(title="ACSRAG API")
 
+import time
+
 USAGE_FILE = os.path.join(os.path.dirname(__file__), "usage_counts.json")
+TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
 
 def load_counts():
     if os.path.exists(USAGE_FILE):
@@ -23,7 +26,26 @@ def load_counts():
 
 def save_counts(counts):
     with open(USAGE_FILE, "w") as f:
-        json.dump(counts, f)
+        json.dump(counts, f, indent=2)
+
+def get_session_usage(counts, session_id):
+    entry = counts.get(session_id)
+    now_ms = int(time.time() * 1000)
+    
+    if not entry:
+        return {"count": 0, "firstRequestTime": now_ms}
+        
+    if isinstance(entry, int):
+        return {"count": entry, "firstRequestTime": now_ms}
+        
+    first_time = entry.get("firstRequestTime", now_ms)
+    if (now_ms - first_time) >= TWELVE_HOURS_MS:
+        return {"count": 0, "firstRequestTime": now_ms}
+        
+    return {
+        "count": entry.get("count", 0),
+        "firstRequestTime": first_time
+    }
 
 # Configure CORS for frontend access
 app.add_middleware(
@@ -75,9 +97,18 @@ async def chat(request: ChatRequest, http_request: Request, response: Response):
         is_new_session = True
     
     counts = load_counts()
+    usage = get_session_usage(counts, session_id)
     
-    if counts.get(session_id, 0) >= 3:
-        raise HTTPException(status_code=429, detail="You have reached the limit of 3 questions for this demo.")
+    if usage["count"] >= 3:
+        now_ms = int(time.time() * 1000)
+        remaining_ms = max(0, TWELVE_HOURS_MS - (now_ms - usage["firstRequestTime"]))
+        remaining_hours = remaining_ms // (3600 * 1000)
+        remaining_mins = (remaining_ms % (3600 * 1000)) // (60 * 1000) + 1
+        time_str = f"{remaining_hours}h {remaining_mins}m" if remaining_hours > 0 else f"{remaining_mins}m"
+        raise HTTPException(
+            status_code=429, 
+            detail=f"You have reached the limit of 3 questions for this demo. Your limit will auto-reset in {time_str}."
+        )
 
     pdf_files = [os.path.join(DOCUMENTS_DIR, f) for f in os.listdir(DOCUMENTS_DIR) if f.endswith('.pdf')]
     
@@ -132,8 +163,13 @@ async def chat(request: ChatRequest, http_request: Request, response: Response):
             "final_verification": "PASS"
         }
         
-        # Increment counter on successful request
-        counts[session_id] = counts.get(session_id, 0) + 1
+        # Increment counter on successful request & record timestamps
+        now_ms = int(time.time() * 1000)
+        counts[session_id] = {
+            "count": usage["count"] + 1,
+            "firstRequestTime": now_ms if usage["count"] == 0 else usage["firstRequestTime"],
+            "lastRequestTime": now_ms
+        }
         save_counts(counts)
         
         if is_new_session:

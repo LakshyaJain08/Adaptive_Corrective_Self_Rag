@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { executeRagPipeline } from '@/lib/rag-engine';
 
 const USAGE_FILE = path.join(process.cwd(), 'usage_counts.json');
+const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
 function loadCounts() {
   if (fs.existsSync(USAGE_FILE)) {
@@ -24,6 +25,31 @@ function saveCounts(counts) {
   } catch (err) {
     console.error('Error saving usage counts:', err);
   }
+}
+
+function getSessionUsage(counts, sessionId) {
+  const entry = counts[sessionId];
+  const now = Date.now();
+
+  if (!entry) {
+    return { count: 0, firstRequestTime: now };
+  }
+
+  // Handle legacy number format
+  if (typeof entry === 'number') {
+    return { count: entry, firstRequestTime: now };
+  }
+
+  const firstTime = entry.firstRequestTime || now;
+  // If 12 hours have passed since the first request, auto-reset the count
+  if (now - firstTime >= TWELVE_HOURS_MS) {
+    return { count: 0, firstRequestTime: now };
+  }
+
+  return {
+    count: entry.count || 0,
+    firstRequestTime: firstTime,
+  };
 }
 
 export async function POST(request) {
@@ -49,11 +75,17 @@ export async function POST(request) {
     }
 
     const counts = loadCounts();
-    const currentCount = counts[sessionId] || 0;
+    const usage = getSessionUsage(counts, sessionId);
 
-    if (currentCount >= 3) {
+    if (usage.count >= 3) {
+      const now = Date.now();
+      const remainingMs = Math.max(0, TWELVE_HOURS_MS - (now - usage.firstRequestTime));
+      const remainingHours = Math.floor(remainingMs / (60 * 60 * 1000));
+      const remainingMinutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+      const timeStr = remainingHours > 0 ? `${remainingHours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
+
       return NextResponse.json(
-        { detail: 'You have reached the limit of 3 questions for this demo.' },
+        { detail: `You have reached the limit of 3 questions for this demo. Your limit will auto-reset in ${timeStr}.` },
         { status: 429 }
       );
     }
@@ -68,8 +100,13 @@ export async function POST(request) {
       );
     }
 
-    // Increment count
-    counts[sessionId] = currentCount + 1;
+    // Increment count & save timestamp
+    const now = Date.now();
+    counts[sessionId] = {
+      count: usage.count + 1,
+      firstRequestTime: usage.count === 0 ? now : usage.firstRequestTime,
+      lastRequestTime: now,
+    };
     saveCounts(counts);
 
     const response = NextResponse.json(result);
