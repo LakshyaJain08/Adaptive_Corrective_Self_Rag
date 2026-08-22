@@ -23,6 +23,7 @@ wheels/
 .coverage
 htmlcov/
 venv/
+.venv/
 ENV/
 
 # Next.js / Node

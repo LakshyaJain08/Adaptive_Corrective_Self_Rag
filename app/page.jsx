@@ -164,6 +164,9 @@ export default function Home() {
           rrfResults: response.data.rrf_results,
           relevantDocs: response.data.relevant_docs,
           compressedPassages: response.data.compressed_passages,
+          webResults: response.data.web_results || 0,
+          webQuery: response.data.web_query || '',
+          webSources: response.data.web_sources || [],
           supportedClaims: response.data.supported_claims,
           unsupportedClaims: response.data.unsupported_claims,
           needRetrieval: response.data.need_retrieval,
@@ -235,8 +238,52 @@ export default function Home() {
         <div className="trace-arrow">↓</div>
 
         <div className="trace-step">
+          <span className="trace-label">CRAG Evaluation:</span>{' '}
+          <span
+            className="trace-value"
+            style={{
+              color: metadata.verdict?.includes('INCORRECT')
+                ? 'var(--warning)'
+                : metadata.verdict?.includes('AMBIGUOUS')
+                ? '#38bdf8'
+                : 'var(--success)',
+            }}
+          >
+            {metadata.verdict || 'CORRECT'}
+          </span>
+        </div>
+        <div className="trace-arrow">↓</div>
+
+        {metadata.webResults > 0 && (
+          <>
+            <div
+              className="trace-step"
+              style={{
+                background: 'rgba(56, 189, 248, 0.1)',
+                borderLeft: '3px solid #38bdf8',
+                padding: '0.4rem 0.6rem',
+                borderRadius: '4px',
+              }}
+            >
+              <span className="trace-label" style={{ color: '#38bdf8' }}>
+                🌐 Tavily Web Search:
+              </span>{' '}
+              <span className="trace-value">{metadata.webResults} live sources</span>
+              {metadata.webQuery && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Query: <em>"{metadata.webQuery}"</em>
+                </div>
+              )}
+            </div>
+            <div className="trace-arrow">↓</div>
+          </>
+        )}
+
+        <div className="trace-step">
           <span className="trace-label">Context Passages:</span>{' '}
-          <span className="trace-value">{metadata.relevantDocs || 0} extracted</span>
+          <span className="trace-value">
+            {metadata.relevantDocs || 0} document{metadata.webResults > 0 ? ` + ${metadata.webResults} web` : ''}
+          </span>
         </div>
         <div className="trace-arrow">↓</div>
 
@@ -266,6 +313,34 @@ export default function Home() {
             {metadata.finalVerification || 'PASS'}
           </span>
         </div>
+
+        {metadata.webSources?.length > 0 && (
+          <div style={{ marginTop: '0.6rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#38bdf8' }}>
+              Web Sources:
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
+              {metadata.webSources.map((src, sIdx) => (
+                <a
+                  key={sIdx}
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '0.72rem',
+                    color: '#93c5fd',
+                    textDecoration: 'none',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  🔗 {src.title || src.url}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
