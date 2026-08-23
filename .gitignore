@@ -63,3 +63,8 @@ faiss_index_cache/
 faiss_index_cache_*/
 chunks_cache*.pkl
 *.pkl
+
+# Uploaded documents (retain sample/tracked resume)
+documents/*
+!documents/Resume DS.pdf
+!documents/.gitkeep

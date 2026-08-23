@@ -10,3 +10,6 @@ services:
         value: 20.18.0
       - key: GOOGLE_API_KEY
         sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+
