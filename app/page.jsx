@@ -987,7 +987,7 @@ export default function Home() {
             >
               <Sparkles size={48} opacity={0.25} color="#6366f1" />
               <p style={{ fontSize: '1.05rem', fontWeight: 500 }}>
-                Welcome to ACSRAG Fullstack!
+                Welcome to ACSRAG!
               </p>
               <p style={{ fontSize: '0.875rem', opacity: 0.7 }}>
                 Click the <strong style={{ color: '#818cf8' }}>+</strong> button below or drag & drop a PDF into the prompt to add knowledge.
