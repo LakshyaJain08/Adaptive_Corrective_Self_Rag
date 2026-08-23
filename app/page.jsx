@@ -13,7 +13,6 @@ import {
   XCircle,
   Layers,
   Plus,
-  MessageSquare,
   Edit2,
   Check,
   X,
@@ -794,11 +793,6 @@ export default function Home() {
                   onClick={() => handleSelectChat(chat.id)}
                 >
                   <div className="chat-item-main">
-                    <MessageSquare
-                      size={15}
-                      color={isActive ? '#818CF8' : '#a1a1aa'}
-                      style={{ flexShrink: 0, marginTop: docCount > 0 ? '2px' : '0' }}
-                    />
                     {isEditing ? (
                       <form
                         onSubmit={(e) => handleSaveRename(chat.id, e)}
@@ -904,7 +898,6 @@ export default function Home() {
             >
               {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
             </button>
-            <MessageSquare size={18} color="#818CF8" style={{ flexShrink: 0 }} />
             <h1
               style={{
                 fontSize: '1.15rem',
