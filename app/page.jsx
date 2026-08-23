@@ -220,6 +220,7 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
@@ -460,12 +461,15 @@ export default function Home() {
       console.error('Upload failed:', error);
       const detail = error.response?.data?.error || 'Failed to upload PDF.';
       alert(detail);
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
   };
 
   const handleFileUpload = (e) => {
     uploadFiles(e.target.files);
+    // Reset file input value so selecting the same file again triggers change event
+    if (e.target) e.target.value = '';
   };
 
   const handleDrop = (e) => {
@@ -579,9 +583,9 @@ export default function Home() {
             : chat
         )
       );
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const renderConfidence = (score) => {
@@ -890,16 +894,14 @@ export default function Home() {
               maxWidth: '75%',
             }}
           >
-            {!isSidebarOpen && (
-              <button
-                type="button"
-                className="sidebar-toggle-btn"
-                onClick={toggleSidebar}
-                title="Open sidebar"
-              >
-                <PanelLeft size={18} />
-              </button>
-            )}
+            <button
+              type="button"
+              className="sidebar-toggle-btn"
+              onClick={toggleSidebar}
+              title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            >
+              {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+            </button>
             <MessageSquare size={18} color="#818CF8" style={{ flexShrink: 0 }} />
             <h1
               style={{
@@ -1093,7 +1095,7 @@ export default function Home() {
             <button
               type="button"
               className="attach-btn"
-              onClick={() => document.getElementById('prompt-file-upload').click()}
+              onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               title="Attach PDF document"
             >
@@ -1102,7 +1104,7 @@ export default function Home() {
 
             <input
               type="file"
-              id="prompt-file-upload"
+              ref={fileInputRef}
               multiple
               accept=".pdf"
               style={{ display: 'none' }}
