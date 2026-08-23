@@ -300,7 +300,8 @@ body {
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
-  max-height: 160px;
+  flex-grow: 1;
+  max-height: 320px;
 }
 
 .doc-item {
@@ -433,12 +434,88 @@ body {
 .score.medium { color: var(--warning); }
 
 /* Input Area */
-.input-area {
-  padding: 1.25rem 1.5rem;
+.input-area-wrapper {
+  padding: 1rem 1.5rem;
   border-top: 1px solid var(--glass-border);
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.input-area-wrapper.drag-active {
+  background: rgba(99, 102, 241, 0.08);
+  border-top-color: var(--primary-color);
+}
+
+.input-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(8px);
+  display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #818cf8;
+  font-weight: 600;
+  font-size: 0.95rem;
+  z-index: 20;
+  border: 2px dashed var(--primary-color);
+  border-radius: 12px;
+  margin: 0.5rem;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+}
+
+.input-uploading-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  width: fit-content;
+}
+
+.input-area {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+}
+
+.attach-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary-color);
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+.attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .input-field {
@@ -446,7 +523,7 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: 0.9rem 1.4rem;
+  padding: 0.85rem 1.3rem;
   color: white;
   font-size: 0.95rem;
   font-family: inherit;
@@ -464,8 +541,8 @@ body {
   background: var(--primary-color);
   color: white;
   border: none;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;

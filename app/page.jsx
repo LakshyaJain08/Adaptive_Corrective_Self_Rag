@@ -817,31 +817,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Upload Drop Zone */}
-        <div
-          className={`upload-zone ${isDragOver ? 'drag-active' : ''}`}
-          onClick={() => document.getElementById('file-upload').click()}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <UploadCloud className="upload-icon" size={28} />
-          <p className="upload-text">
-            {isUploading
-              ? 'Uploading and indexing...'
-              : 'Click or drag PDF files to upload knowledge'}
-          </p>
-          <input
-            type="file"
-            id="file-upload"
-            multiple
-            accept=".pdf"
-            style={{ display: 'none' }}
-            onChange={handleFileUpload}
-            disabled={isUploading}
-          />
-        </div>
-
         {/* Knowledge Base Document List */}
         <div className="sidebar-section" style={{ flexGrow: 1, minHeight: 0 }}>
           <div className="sidebar-section-header">
@@ -910,7 +885,7 @@ export default function Home() {
                   padding: '0.5rem 0',
                 }}
               >
-                No documents uploaded yet.
+                No documents uploaded yet. Click + in prompt to attach.
               </p>
             )}
           </div>
@@ -989,7 +964,7 @@ export default function Home() {
                 Welcome to ACSRAG Fullstack!
               </p>
               <p style={{ fontSize: '0.875rem', opacity: 0.7 }}>
-                Upload PDF documents on the left and ask questions to begin.
+                Click the <strong style={{ color: '#818cf8' }}>+</strong> button below or drag & drop a PDF into the prompt to add knowledge.
               </p>
             </div>
           ) : (
@@ -1069,28 +1044,71 @@ export default function Home() {
           <div ref={messagesEndRef} style={{ height: '1px', visibility: 'hidden' }} />
         </div>
 
-        <form className="input-area" onSubmit={handleSendMessage}>
-          <input
-            type="text"
-            className="input-field"
-            placeholder={
-              documents.length === 0
-                ? 'Upload a PDF document to start chatting...'
-                : 'Ask a question about your documents...'
-            }
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading || documents.length === 0}
-          />
-          <button
-            type="submit"
-            className="send-btn"
-            disabled={isLoading || documents.length === 0 || !input.trim()}
-            title="Send question"
-          >
-            <Send size={18} />
-          </button>
-        </form>
+        {/* Prompt Input Area with + Attachment button & Drag-Drop */}
+        <div
+          className={`input-area-wrapper ${isDragOver ? 'drag-active' : ''}`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          {isDragOver && (
+            <div className="input-drag-overlay">
+              <UploadCloud size={22} />
+              <span>Drop PDF here to upload knowledge</span>
+            </div>
+          )}
+
+          {isUploading && (
+            <div className="input-uploading-pill">
+              <UploadCloud size={14} />
+              <span>Uploading and indexing PDF knowledge...</span>
+            </div>
+          )}
+
+          <form className="input-area" onSubmit={handleSendMessage}>
+            <button
+              type="button"
+              className="attach-btn"
+              onClick={() => document.getElementById('prompt-file-upload').click()}
+              disabled={isUploading}
+              title="Attach PDF document"
+            >
+              <Plus size={20} />
+            </button>
+
+            <input
+              type="file"
+              id="prompt-file-upload"
+              multiple
+              accept=".pdf"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+              disabled={isUploading}
+            />
+
+            <input
+              type="text"
+              className="input-field"
+              placeholder={
+                documents.length === 0
+                  ? 'Click + or drag PDF to add documents, then ask anything...'
+                  : 'Ask a question about your documents...'
+              }
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+            />
+
+            <button
+              type="submit"
+              className="send-btn"
+              disabled={isLoading || !input.trim()}
+              title="Send question"
+            >
+              <Send size={18} />
+            </button>
+          </form>
+        </div>
       </main>
     </div>
   );
