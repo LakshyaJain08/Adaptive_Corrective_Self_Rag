@@ -706,7 +706,6 @@ export default function Home() {
                 Clear Chat
               </button>
             )}
-            <div className="chat-badge">Unified Next.js App</div>
           </div>
         </header>
 
