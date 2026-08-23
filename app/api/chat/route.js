@@ -90,9 +90,15 @@ export async function POST(request) {
       );
     }
 
-    // Execute RAG Pipeline with per-chat documents filter
+    // Execute RAG Pipeline with per-chat documents filter and feature toggles
     const documentsList = Array.isArray(body.documents) ? body.documents : null;
-    const result = await executeRagPipeline(question, documentsList);
+    const webSearch = body.webSearch !== false;
+    const thinkMode = body.thinkMode !== false;
+
+    const result = await executeRagPipeline(question, documentsList, {
+      webSearch,
+      thinkMode,
+    });
 
     if (result.error) {
       return NextResponse.json(

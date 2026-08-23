@@ -21,6 +21,9 @@ import {
   PanelLeft,
   PanelLeftClose,
   SquarePen,
+  Globe,
+  Brain,
+  Zap,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -219,6 +222,8 @@ export default function Home() {
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [thinkModeEnabled, setThinkModeEnabled] = useState(true);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -528,6 +533,8 @@ export default function Home() {
       const response = await axios.post('/api/chat', {
         question: queryText,
         documents: chatDocs,
+        webSearch: webSearchEnabled,
+        thinkMode: thinkModeEnabled,
       });
 
       const aiMessage = {
@@ -549,6 +556,8 @@ export default function Home() {
           webResults: response.data.web_results || 0,
           webQuery: response.data.web_query || '',
           webSources: response.data.web_sources || [],
+          webSearchEnabled: response.data.web_search_enabled !== false,
+          thinkModeEnabled: response.data.think_mode_enabled !== false,
           supportedClaims: response.data.supported_claims,
           unsupportedClaims: response.data.unsupported_claims,
           needRetrieval: response.data.need_retrieval,
@@ -636,7 +645,7 @@ export default function Home() {
           <span
             className="trace-value"
             style={{
-              color: metadata.verdict?.includes('INCORRECT')
+              color: metadata.verdict?.includes('INCORRECT') || metadata.verdict?.includes('REQUIRED')
                 ? 'var(--warning)'
                 : metadata.verdict?.includes('AMBIGUOUS')
                 ? '#38bdf8'
@@ -647,6 +656,50 @@ export default function Home() {
           </span>
         </div>
         <div className="trace-arrow">↓</div>
+
+        {metadata.verdict === 'WEB_SEARCH_REQUIRED (OFF)' && (
+          <>
+            <div
+              className="trace-step"
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderLeft: '3px solid #ef4444',
+                padding: '0.4rem 0.6rem',
+                borderRadius: '4px',
+              }}
+            >
+              <span className="trace-label" style={{ color: '#ef4444' }}>
+                ⚠️ Web Search Required:
+              </span>{' '}
+              <span className="trace-value" style={{ color: '#fca5a5' }}>
+                Web Search is toggled OFF (External lookup blocked)
+              </span>
+            </div>
+            <div className="trace-arrow">↓</div>
+          </>
+        )}
+
+        {metadata.verdict === 'AMBIGUOUS (Web Search Disabled)' && (
+          <>
+            <div
+              className="trace-step"
+              style={{
+                background: 'rgba(245, 158, 11, 0.1)',
+                borderLeft: '3px solid #f59e0b',
+                padding: '0.4rem 0.6rem',
+                borderRadius: '4px',
+              }}
+            >
+              <span className="trace-label" style={{ color: '#f59e0b' }}>
+                ⚠️ Web Search is OFF:
+              </span>{' '}
+              <span className="trace-value" style={{ color: '#fde68a' }}>
+                External comparison omitted (Document only)
+              </span>
+            </div>
+            <div className="trace-arrow">↓</div>
+          </>
+        )}
 
         {metadata.webResults > 0 && (
           <>
@@ -1065,7 +1118,7 @@ export default function Home() {
           <div ref={messagesEndRef} style={{ height: '1px', visibility: 'hidden' }} />
         </div>
 
-        {/* Prompt Input Area with + Attachment button & Drag-Drop */}
+        {/* Prompt Input Area with Mode Toggles, + Attachment button & Drag-Drop */}
         <div
           className={`input-area-wrapper ${isDragOver ? 'drag-active' : ''}`}
           onDrop={handleDrop}
@@ -1078,6 +1131,39 @@ export default function Home() {
               <span>Drop PDF here to upload knowledge</span>
             </div>
           )}
+
+          {/* Mode Toggles Bar (Web Search & Deep Think) */}
+          <div className="mode-toggles-bar">
+            <button
+              type="button"
+              className={`mode-toggle-pill ${webSearchEnabled ? 'web-active' : ''}`}
+              onClick={() => setWebSearchEnabled((prev) => !prev)}
+              title={
+                webSearchEnabled
+                  ? '🌐 Web Search is ON — Live Tavily search fallback for external knowledge'
+                  : '🌐 Web Search is OFF — Restricted to attached documents only'
+              }
+            >
+              <Globe size={13} />
+              <span>Web Search</span>
+              <span className="mode-pill-status-dot" />
+            </button>
+
+            <button
+              type="button"
+              className={`mode-toggle-pill ${thinkModeEnabled ? 'think-active' : ''}`}
+              onClick={() => setThinkModeEnabled((prev) => !prev)}
+              title={
+                thinkModeEnabled
+                  ? '🧠 Deep Think is ON — Full Adaptive Self-RAG claim extraction & factuality check'
+                  : '⚡ Deep Think is OFF — Fast single-pass response mode'
+              }
+            >
+              {thinkModeEnabled ? <Brain size={13} /> : <Zap size={13} />}
+              <span>{thinkModeEnabled ? 'Deep Think' : 'Fast Mode'}</span>
+              <span className="mode-pill-status-dot" />
+            </button>
+          </div>
 
           {isUploading && (
             <div className="input-uploading-pill">
