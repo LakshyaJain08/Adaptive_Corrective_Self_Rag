@@ -21,6 +21,7 @@ import {
   Paperclip,
   PanelLeft,
   PanelLeftClose,
+  SquarePen,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -768,9 +769,10 @@ export default function Home() {
           type="button"
           className="new-chat-btn"
           onClick={handleCreateChat}
-          title="Create new conversation"
+          title="New chat"
         >
-          <Plus size={18} /> New Chat
+          <SquarePen size={18} />
+          <span>New chat</span>
         </button>
 
         {/* Chat Conversations Section */}
