@@ -19,6 +19,8 @@ import {
   X,
   BookOpen,
   Paperclip,
+  PanelLeft,
+  PanelLeftClose,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -213,10 +215,13 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   // Active chat & its messages
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0] || null;
@@ -736,10 +741,23 @@ export default function Home() {
       style={{ cursor: isResizing ? 'col-resize' : 'default' }}
     >
       {/* Sidebar */}
-      <aside className="sidebar" style={{ width: sidebarWidth, flexShrink: 0 }}>
-        <h2>
-          <Sparkles size={22} color="#6366F1" /> ACSRAG Brain
-        </h2>
+      <aside
+        className={`sidebar ${isSidebarOpen ? '' : 'closed'}`}
+        style={{ width: isSidebarOpen ? sidebarWidth : 0, flexShrink: 0 }}
+      >
+        <div className="sidebar-header">
+          <h2>
+            <Sparkles size={20} color="#6366F1" /> ACSRAG Brain
+          </h2>
+          <button
+            type="button"
+            className="sidebar-toggle-btn"
+            onClick={toggleSidebar}
+            title="Close sidebar"
+          >
+            <PanelLeftClose size={18} />
+          </button>
+        </div>
 
         {/* New Chat Button */}
         <button
@@ -855,7 +873,10 @@ export default function Home() {
       </aside>
 
       {/* Resizer */}
-      <div className="resizer" onMouseDown={startResizing} />
+      <div
+        className={`resizer ${isSidebarOpen ? '' : 'hidden'}`}
+        onMouseDown={startResizing}
+      />
 
       {/* Main Chat Area */}
       <main className="chat-container">
@@ -864,11 +885,21 @@ export default function Home() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.6rem',
+              gap: '0.75rem',
               overflow: 'hidden',
               maxWidth: '75%',
             }}
           >
+            {!isSidebarOpen && (
+              <button
+                type="button"
+                className="sidebar-toggle-btn"
+                onClick={toggleSidebar}
+                title="Open sidebar"
+              >
+                <PanelLeft size={18} />
+              </button>
+            )}
             <MessageSquare size={18} color="#818CF8" style={{ flexShrink: 0 }} />
             <h1
               style={{
