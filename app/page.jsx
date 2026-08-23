@@ -24,6 +24,9 @@ import {
   Globe,
   Brain,
   Zap,
+  MoreHorizontal,
+  Pencil,
+  Share2,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -224,10 +227,22 @@ export default function Home() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [thinkModeEnabled, setThinkModeEnabled] = useState(true);
+  const [openMenuChatId, setOpenMenuChatId] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  // Close 3-dots dropdown menu when clicking outside
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest('.chat-menu-container')) {
+        setOpenMenuChatId(null);
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   // Active chat & its messages
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0] || null;
@@ -899,23 +914,69 @@ export default function Home() {
                   </div>
 
                   {!isEditing && (
-                    <div className="chat-item-actions">
+                    <div
+                      className="chat-menu-container"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         type="button"
-                        className="chat-action-btn"
-                        onClick={(e) => handleStartRename(chat, e)}
-                        title="Rename chat"
+                        className={`chat-menu-trigger-btn ${openMenuChatId === chat.id ? 'open' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuChatId((prev) => (prev === chat.id ? null : chat.id));
+                        }}
+                        title="Chat options"
                       >
-                        <Edit2 size={13} />
+                        <MoreHorizontal size={15} />
                       </button>
-                      <button
-                        type="button"
-                        className="chat-action-btn delete"
-                        onClick={(e) => handleDeleteChat(chat.id, e)}
-                        title="Delete chat"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+
+                      {openMenuChatId === chat.id && (
+                        <div
+                          className="chat-dropdown-menu"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="chat-dropdown-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuChatId(null);
+                              handleStartRename(chat, e);
+                            }}
+                          >
+                            <Pencil size={14} />
+                            <span>Rename</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="chat-dropdown-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuChatId(null);
+                              if (typeof window !== 'undefined') {
+                                navigator.clipboard?.writeText(window.location.href);
+                              }
+                            }}
+                          >
+                            <Share2 size={14} />
+                            <span>Share</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="chat-dropdown-item delete-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuChatId(null);
+                              handleDeleteChat(chat.id, e);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
