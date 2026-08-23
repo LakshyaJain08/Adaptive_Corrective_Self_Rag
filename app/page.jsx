@@ -216,6 +216,41 @@ export default function Home() {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Restore chat messages across page refreshes from sessionStorage
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('acsrag_chat_messages');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load chat history from sessionStorage:', e);
+    }
+  }, []);
+
+  // Save chat messages to sessionStorage on change
+  useEffect(() => {
+    try {
+      if (messages.length > 0) {
+        sessionStorage.setItem('acsrag_chat_messages', JSON.stringify(messages));
+      } else {
+        sessionStorage.removeItem('acsrag_chat_messages');
+      }
+    } catch (e) {
+      console.error('Failed to persist chat history:', e);
+    }
+  }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    try {
+      sessionStorage.removeItem('acsrag_chat_messages');
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -648,7 +683,31 @@ export default function Home() {
       <main className="chat-container">
         <header className="chat-header">
           <h1>Adaptive Corrective Self-RAG</h1>
-          <div className="chat-badge">Unified Next.js App</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {messages.length > 0 && (
+              <button
+                onClick={handleClearChat}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#fca5a5',
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '16px',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Clear current conversation"
+              >
+                <Trash2 size={13} />
+                Clear Chat
+              </button>
+            )}
+            <div className="chat-badge">Unified Next.js App</div>
+          </div>
         </header>
 
         <div className="messages">
