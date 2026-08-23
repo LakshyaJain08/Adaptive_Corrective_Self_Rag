@@ -12,6 +12,11 @@ import {
   CheckCircle2,
   XCircle,
   Layers,
+  Plus,
+  MessageSquare,
+  Edit2,
+  Check,
+  X,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -199,7 +204,10 @@ function renderFormattedText(content) {
 
 export default function Home() {
   const [documents, setDocuments] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [editingChatId, setEditingChatId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
   const [input, setInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -207,6 +215,10 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Active chat & its messages
+  const activeChat = chats.find((c) => c.id === activeChatId) || chats[0] || null;
+  const messages = activeChat?.messages || [];
 
   const scrollToBottom = (behavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
@@ -216,39 +228,132 @@ export default function Home() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Restore chat messages across page refreshes from sessionStorage
+  // Restore chats from localStorage on mount
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem('acsrag_chat_messages');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedChats = localStorage.getItem('acsrag_chats');
+      const savedActiveId = localStorage.getItem('acsrag_active_chat_id');
+      if (savedChats) {
+        const parsed = JSON.parse(savedChats);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setMessages(parsed);
+          setChats(parsed);
+          if (savedActiveId && parsed.some((c) => c.id === savedActiveId)) {
+            setActiveChatId(savedActiveId);
+          } else {
+            setActiveChatId(parsed[0].id);
+          }
+          return;
         }
       }
     } catch (e) {
-      console.error('Failed to load chat history from sessionStorage:', e);
+      console.error('Failed to load chats from localStorage:', e);
     }
+
+    // Default initial chat
+    const initialId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `chat_${Date.now()}`;
+    const initialChat = {
+      id: initialId,
+      title: 'New Chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: [],
+    };
+    setChats([initialChat]);
+    setActiveChatId(initialId);
   }, []);
 
-  // Save chat messages to sessionStorage on change
+  // Save chats to localStorage on change
   useEffect(() => {
-    try {
-      if (messages.length > 0) {
-        sessionStorage.setItem('acsrag_chat_messages', JSON.stringify(messages));
-      } else {
-        sessionStorage.removeItem('acsrag_chat_messages');
+    if (chats.length > 0) {
+      try {
+        localStorage.setItem('acsrag_chats', JSON.stringify(chats));
+        if (activeChatId) {
+          localStorage.setItem('acsrag_active_chat_id', activeChatId);
+        }
+      } catch (e) {
+        console.error('Failed to save chats to localStorage:', e);
       }
-    } catch (e) {
-      console.error('Failed to persist chat history:', e);
     }
-  }, [messages]);
+  }, [chats, activeChatId]);
+
+  const handleCreateChat = () => {
+    const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `chat_${Date.now()}`;
+    const newChat = {
+      id: newId,
+      title: 'New Chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: [],
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newId);
+    setEditingChatId(null);
+    setInput('');
+  };
+
+  const handleSelectChat = (id) => {
+    setActiveChatId(id);
+    setEditingChatId(null);
+  };
+
+  const handleStartRename = (chat, e) => {
+    e.stopPropagation();
+    setEditingChatId(chat.id);
+    setEditTitle(chat.title);
+  };
+
+  const handleSaveRename = (id, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const clean = editTitle.trim();
+    if (clean) {
+      setChats((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title: clean, updatedAt: Date.now() } : c))
+      );
+    }
+    setEditingChatId(null);
+  };
+
+  const handleCancelRename = (e) => {
+    if (e) e.stopPropagation();
+    setEditingChatId(null);
+  };
+
+  const handleDeleteChat = (id, e) => {
+    e.stopPropagation();
+    setChats((prev) => {
+      const filtered = prev.filter((c) => c.id !== id);
+      if (filtered.length === 0) {
+        const freshId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `chat_${Date.now()}`;
+        const freshChat = {
+          id: freshId,
+          title: 'New Chat',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          messages: [],
+        };
+        setActiveChatId(freshId);
+        return [freshChat];
+      }
+      if (activeChatId === id) {
+        setActiveChatId(filtered[0].id);
+      }
+      return filtered;
+    });
+    if (editingChatId === id) {
+      setEditingChatId(null);
+    }
+  };
 
   const handleClearChat = () => {
-    setMessages([]);
-    try {
-      sessionStorage.removeItem('acsrag_chat_messages');
-    } catch (e) {}
+    if (!activeChatId) return;
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChatId ? { ...chat, messages: [], updatedAt: Date.now() } : chat
+      )
+    );
   };
 
   useEffect(() => {
@@ -358,13 +463,35 @@ export default function Home() {
       return;
     }
 
-    const userMessage = { role: 'user', content: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    const currentId = activeChatId;
+    const queryText = input.trim();
+    const userMessage = { role: 'user', content: queryText };
     setInput('');
     setIsLoading(true);
 
+    // Append user message & auto-update title from "New Chat" to query preview
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id === currentId) {
+          const autoTitle =
+            chat.title === 'New Chat' || chat.title === 'Untitled'
+              ? queryText.length > 28
+                ? queryText.slice(0, 28) + '...'
+                : queryText
+              : chat.title;
+          return {
+            ...chat,
+            title: autoTitle,
+            updatedAt: Date.now(),
+            messages: [...chat.messages, userMessage],
+          };
+        }
+        return chat;
+      })
+    );
+
     try {
-      const response = await axios.post('/api/chat', { question: userMessage.content });
+      const response = await axios.post('/api/chat', { question: queryText });
 
       const aiMessage = {
         role: 'ai',
@@ -392,21 +519,33 @@ export default function Home() {
         },
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === currentId
+            ? { ...chat, updatedAt: Date.now(), messages: [...chat.messages, aiMessage] }
+            : chat
+        )
+      );
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg =
         error.response?.data?.detail ||
         error.response?.data?.error ||
         'Sorry, I encountered an error while processing your request.';
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          content: errorMsg,
-          isError: true,
-        },
-      ]);
+
+      const errorAiMessage = {
+        role: 'ai',
+        content: errorMsg,
+        isError: true,
+      };
+
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === currentId
+            ? { ...chat, updatedAt: Date.now(), messages: [...chat.messages, errorAiMessage] }
+            : chat
+        )
+      );
     }
 
     setIsLoading(false);
@@ -574,6 +713,111 @@ export default function Home() {
           <Sparkles size={22} color="#6366F1" /> ACSRAG Brain
         </h2>
 
+        {/* New Chat Button */}
+        <button
+          type="button"
+          className="new-chat-btn"
+          onClick={handleCreateChat}
+          title="Create new conversation"
+        >
+          <Plus size={18} /> New Chat
+        </button>
+
+        {/* Chat Conversations Section */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-header">
+            <span>Conversations ({chats.length})</span>
+          </div>
+
+          <div className="chat-list">
+            {chats.map((chat) => {
+              const isActive = chat.id === activeChatId;
+              const isEditing = chat.id === editingChatId;
+
+              return (
+                <div
+                  key={chat.id}
+                  className={`chat-item ${isActive ? 'active' : ''}`}
+                  onClick={() => handleSelectChat(chat.id)}
+                >
+                  <div className="chat-item-main">
+                    <MessageSquare
+                      size={15}
+                      color={isActive ? '#818CF8' : '#a1a1aa'}
+                      style={{ flexShrink: 0 }}
+                    />
+                    {isEditing ? (
+                      <form
+                        onSubmit={(e) => handleSaveRename(chat.id, e)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          width: '100%',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="text"
+                          className="chat-rename-input"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') handleCancelRename(e);
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          className="chat-action-btn"
+                          style={{ color: 'var(--success)' }}
+                          title="Save title"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="chat-action-btn"
+                          onClick={handleCancelRename}
+                          title="Cancel"
+                        >
+                          <X size={14} />
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="chat-item-title" title={chat.title}>
+                        {chat.title}
+                      </span>
+                    )}
+                  </div>
+
+                  {!isEditing && (
+                    <div className="chat-item-actions">
+                      <button
+                        type="button"
+                        className="chat-action-btn"
+                        onClick={(e) => handleStartRename(chat, e)}
+                        title="Rename chat"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="chat-action-btn delete"
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                        title="Delete chat"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Upload Drop Zone */}
         <div
           className={`upload-zone ${isDragOver ? 'drag-active' : ''}`}
           onClick={() => document.getElementById('file-upload').click()}
@@ -581,7 +825,7 @@ export default function Home() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
-          <UploadCloud className="upload-icon" size={34} />
+          <UploadCloud className="upload-icon" size={28} />
           <p className="upload-text">
             {isUploading
               ? 'Uploading and indexing...'
@@ -598,81 +842,78 @@ export default function Home() {
           />
         </div>
 
-        <div className="doc-list">
-          <h3
-            style={{
-              fontSize: '0.8rem',
-              color: 'var(--text-secondary)',
-              marginBottom: '0.4rem',
-              letterSpacing: '0.05em',
-              fontWeight: 600,
-            }}
-          >
-            KNOWLEDGE BASE ({documents.length})
-          </h3>
-          {documents.map((doc, idx) => (
-            <div
-              key={idx}
-              className="doc-item"
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
+        {/* Knowledge Base Document List */}
+        <div className="sidebar-section" style={{ flexGrow: 1, minHeight: 0 }}>
+          <div className="sidebar-section-header">
+            <span>Knowledge Base ({documents.length})</span>
+          </div>
+
+          <div className="doc-list">
+            {documents.map((doc, idx) => (
               <div
+                key={idx}
+                className="doc-item"
                 style={{
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  overflow: 'hidden',
                 }}
               >
-                <FileText size={16} color="#818CF8" style={{ flexShrink: 0 }} />
-                <span
+                <div
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {doc}
-                </span>
+                  <FileText size={16} color="#818CF8" style={{ flexShrink: 0 }} />
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {doc}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteDocument(doc);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--danger)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0.25rem',
+                    opacity: 0.8,
+                    transition: 'opacity 0.2s',
+                  }}
+                  title="Delete document"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteDocument(doc);
-                }}
+            ))}
+            {documents.length === 0 && (
+              <p
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--danger)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0.25rem',
-                  opacity: 0.8,
-                  transition: 'opacity 0.2s',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  fontStyle: 'italic',
+                  padding: '0.5rem 0',
                 }}
-                title="Delete document"
               >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
-          {documents.length === 0 && (
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: 'var(--text-secondary)',
-                fontStyle: 'italic',
-                padding: '0.5rem 0',
-              }}
-            >
-              No documents uploaded yet.
-            </p>
-          )}
+                No documents uploaded yet.
+              </p>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -682,10 +923,31 @@ export default function Home() {
       {/* Main Chat Area */}
       <main className="chat-container">
         <header className="chat-header">
-          <h1>Adaptive Corrective Self-RAG</h1>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              overflow: 'hidden',
+              maxWidth: '75%',
+            }}
+          >
+            <MessageSquare size={18} color="#818CF8" style={{ flexShrink: 0 }} />
+            <h1
+              style={{
+                fontSize: '1.15rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {activeChat?.title || 'Adaptive Corrective Self-RAG'}
+            </h1>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {messages.length > 0 && (
               <button
+                type="button"
                 onClick={handleClearChat}
                 style={{
                   background: 'rgba(239, 68, 68, 0.12)',
