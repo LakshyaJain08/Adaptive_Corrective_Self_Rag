@@ -14,6 +14,189 @@ import {
   Layers,
 } from 'lucide-react';
 
+function renderInline(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  // Match: `code`, **bold**, __bold__, *italic*, _italic_
+  const tokenRegex = /(`[^`]+`|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g;
+  const parts = text.split(tokenRegex);
+
+  return parts.map((part, i) => {
+    if (!part) return null;
+
+    if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+      return (
+        <code
+          key={i}
+          style={{
+            background: 'rgba(99, 102, 241, 0.18)',
+            color: '#c7d2fe',
+            padding: '0.15rem 0.4rem',
+            borderRadius: '4px',
+            fontSize: '0.9em',
+            fontFamily: 'monospace',
+          }}
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    if (
+      (part.startsWith('**') && part.endsWith('**') && part.length >= 4) ||
+      (part.startsWith('__') && part.endsWith('__') && part.length >= 4)
+    ) {
+      return (
+        <strong key={i} style={{ fontWeight: 700, color: '#ffffff' }}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    if (
+      (part.startsWith('*') && part.endsWith('*') && part.length >= 2) ||
+      (part.startsWith('_') && part.endsWith('_') && part.length >= 2)
+    ) {
+      return (
+        <em key={i} style={{ fontStyle: 'italic', color: '#e0e7ff' }}>
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+
+    return part;
+  });
+}
+
+function renderFormattedText(content) {
+  if (!content || typeof content !== 'string') return content;
+
+  const lines = content.split('\n');
+  const elements = [];
+  let currentList = null;
+  let inCodeBlock = false;
+  let codeBlockContent = [];
+
+  const flushList = () => {
+    if (currentList) {
+      elements.push(
+        <ul
+          key={`list-${elements.length}`}
+          style={{
+            paddingLeft: '1.35rem',
+            margin: '0.35rem 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.3rem',
+          }}
+        >
+          {currentList.map((item, lIdx) => (
+            <li key={lIdx} style={{ lineHeight: 1.55 }}>
+              {renderInline(item)}
+            </li>
+          ))}
+        </ul>
+      );
+      currentList = null;
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        flushList();
+        elements.push(
+          <pre
+            key={`code-${index}`}
+            style={{
+              background: 'rgba(0, 0, 0, 0.45)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              padding: '0.8rem 1rem',
+              overflowX: 'auto',
+              fontSize: '0.85rem',
+              margin: '0.5rem 0',
+              fontFamily: 'monospace',
+            }}
+          >
+            <code>{codeBlockContent.join('\n')}</code>
+          </pre>
+        );
+        inCodeBlock = false;
+        codeBlockContent = [];
+      } else {
+        flushList();
+        inCodeBlock = true;
+      }
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(line);
+      return;
+    }
+
+    if (trimmed.startsWith('### ')) {
+      flushList();
+      elements.push(
+        <h4 key={`h3-${index}`} style={{ margin: '0.6rem 0 0.3rem', fontSize: '1rem', fontWeight: 600, color: '#e0e7ff' }}>
+          {renderInline(trimmed.slice(4))}
+        </h4>
+      );
+      return;
+    }
+    if (trimmed.startsWith('## ')) {
+      flushList();
+      elements.push(
+        <h3 key={`h2-${index}`} style={{ margin: '0.8rem 0 0.4rem', fontSize: '1.1rem', fontWeight: 700, color: '#e0e7ff' }}>
+          {renderInline(trimmed.slice(3))}
+        </h3>
+      );
+      return;
+    }
+    if (trimmed.startsWith('# ')) {
+      flushList();
+      elements.push(
+        <h2 key={`h1-${index}`} style={{ margin: '1rem 0 0.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
+          {renderInline(trimmed.slice(2))}
+        </h2>
+      );
+      return;
+    }
+
+    const bulletMatch = trimmed.match(/^[-*•]\s+(.*)$/);
+    if (bulletMatch) {
+      if (!currentList) currentList = [];
+      currentList.push(bulletMatch[1]);
+      return;
+    }
+
+    const numMatch = trimmed.match(/^\d+[.)]\s+(.*)$/);
+    if (numMatch) {
+      if (!currentList) currentList = [];
+      currentList.push(numMatch[1]);
+      return;
+    }
+
+    flushList();
+
+    if (trimmed === '') {
+      elements.push(<div key={`blank-${index}`} style={{ height: '0.4rem' }} />);
+    } else {
+      elements.push(
+        <p key={`p-${index}`} style={{ margin: '0.2rem 0', lineHeight: 1.6 }}>
+          {renderInline(line)}
+        </p>
+      );
+    }
+  });
+
+  flushList();
+  return elements;
+}
+
 export default function Home() {
   const [documents, setDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -499,7 +682,7 @@ export default function Home() {
                     background: msg.isError ? 'rgba(239, 68, 68, 0.1)' : undefined,
                   }}
                 >
-                  {msg.content}
+                  {renderFormattedText(msg.content)}
                 </div>
 
                 {msg.metadata && (
@@ -541,7 +724,7 @@ export default function Home() {
                           }}
                         >
                           {msg.metadata.claims.map((claim, cIdx) => (
-                            <li key={cIdx}>{claim}</li>
+                            <li key={cIdx}>{renderInline(claim)}</li>
                           ))}
                         </ul>
                       </div>
