@@ -645,86 +645,34 @@ body {
   width: fit-content;
 }
 
-/* Mode Toggles Bar (Web Search & Deep Think) */
-.mode-toggles-bar {
+/* Unified Pill Prompt Bar with Embedded In-Prompt Controls */
+.unified-prompt-bar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 0.25rem;
-  margin-bottom: 0.15rem;
-  user-select: none;
-}
-
-.mode-toggle-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--glass-border);
-  color: var(--text-secondary);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-}
-
-.mode-toggle-pill:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.mode-toggle-pill.web-active {
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #38bdf8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
-}
-
-.mode-toggle-pill.web-active:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
-}
-
-.mode-toggle-pill.think-active {
-  background: rgba(168, 85, 247, 0.12);
-  border-color: rgba(168, 85, 247, 0.5);
-  color: #c084fc;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
-}
-
-.mode-toggle-pill.think-active:hover {
-  background: rgba(168, 85, 247, 0.2);
-  border-color: #c084fc;
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);
-}
-
-.mode-pill-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.75;
-}
-
-.input-area {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
+  background: #18191c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
   width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.unified-prompt-bar:focus-within {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: #1d1e23;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .attach-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  color: var(--text-secondary);
-  width: 44px;
-  height: 44px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -735,50 +683,99 @@ body {
 }
 
 .attach-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+  transform: scale(1.06);
 }
 
 .attach-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.input-field {
+.prompt-input-field {
   flex-grow: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  padding: 0.85rem 1.3rem;
-  color: white;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f8fafc;
   font-size: 0.95rem;
   font-family: inherit;
-  transition: all 0.3s ease;
+  padding: 0.5rem 0.25rem;
+}
+
+.prompt-input-field::placeholder {
+  color: #64748b;
+}
+
+.prompt-inner-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.mode-toggle-pill-inside {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
 
-.input-field:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-  background: rgba(255, 255, 255, 0.08);
+.mode-toggle-pill-inside:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.mode-toggle-pill-inside.web-active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #7dd3fc;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+}
+
+.mode-toggle-pill-inside.web-active:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #e0f2fe;
+}
+
+.mode-toggle-pill-inside.think-active {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #d8b4fe;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+}
+
+.mode-toggle-pill-inside.think-active:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+  color: #f3e8ff;
 }
 
 .send-btn {
   background: var(--primary-color);
   color: white;
   border: none;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
   flex-shrink: 0;
 }
 
@@ -792,8 +789,8 @@ body {
 }
 
 .send-btn:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
   cursor: not-allowed;
   box-shadow: none;
 }

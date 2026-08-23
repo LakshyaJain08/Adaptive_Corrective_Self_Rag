@@ -1118,7 +1118,7 @@ export default function Home() {
           <div ref={messagesEndRef} style={{ height: '1px', visibility: 'hidden' }} />
         </div>
 
-        {/* Prompt Input Area with Mode Toggles, + Attachment button & Drag-Drop */}
+        {/* Prompt Input Area with unified Pill Container */}
         <div
           className={`input-area-wrapper ${isDragOver ? 'drag-active' : ''}`}
           onDrop={handleDrop}
@@ -1132,39 +1132,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Mode Toggles Bar (Web Search & Deep Think) */}
-          <div className="mode-toggles-bar">
-            <button
-              type="button"
-              className={`mode-toggle-pill ${webSearchEnabled ? 'web-active' : ''}`}
-              onClick={() => setWebSearchEnabled((prev) => !prev)}
-              title={
-                webSearchEnabled
-                  ? '🌐 Web Search is ON — Live Tavily search fallback for external knowledge'
-                  : '🌐 Web Search is OFF — Restricted to attached documents only'
-              }
-            >
-              <Globe size={13} />
-              <span>Web Search</span>
-              <span className="mode-pill-status-dot" />
-            </button>
-
-            <button
-              type="button"
-              className={`mode-toggle-pill ${thinkModeEnabled ? 'think-active' : ''}`}
-              onClick={() => setThinkModeEnabled((prev) => !prev)}
-              title={
-                thinkModeEnabled
-                  ? '🧠 Deep Think is ON — Full Adaptive Self-RAG claim extraction & factuality check'
-                  : '⚡ Deep Think is OFF — Fast single-pass response mode'
-              }
-            >
-              {thinkModeEnabled ? <Brain size={13} /> : <Zap size={13} />}
-              <span>{thinkModeEnabled ? 'Deep Think' : 'Fast Mode'}</span>
-              <span className="mode-pill-status-dot" />
-            </button>
-          </div>
-
           {isUploading && (
             <div className="input-uploading-pill">
               <UploadCloud size={14} />
@@ -1172,7 +1139,7 @@ export default function Home() {
             </div>
           )}
 
-          <form className="input-area" onSubmit={handleSendMessage}>
+          <form className="unified-prompt-bar" onSubmit={handleSendMessage}>
             <button
               type="button"
               className="attach-btn"
@@ -1195,25 +1162,56 @@ export default function Home() {
 
             <input
               type="text"
-              className="input-field"
+              className="prompt-input-field"
               placeholder={
                 (activeChat?.documents?.length || 0) === 0
-                  ? 'Click + or drag PDF to attach documents to this chat, or ask anything...'
-                  : 'Ask a question about this chat\'s documents...'
+                  ? 'Ask anything or attach a PDF...'
+                  : 'Ask anything about your documents...'
               }
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
             />
 
-            <button
-              type="submit"
-              className="send-btn"
-              disabled={isLoading || !input.trim()}
-              title="Send question"
-            >
-              <Send size={18} />
-            </button>
+            {/* In-prompt Controls: Web Search, Deep Think & Send */}
+            <div className="prompt-inner-controls">
+              <button
+                type="button"
+                className={`mode-toggle-pill-inside ${webSearchEnabled ? 'web-active' : ''}`}
+                onClick={() => setWebSearchEnabled((prev) => !prev)}
+                title={
+                  webSearchEnabled
+                    ? '🌐 Web Search is ON — Live Tavily search fallback for external knowledge'
+                    : '🌐 Web Search is OFF — Restricted to attached documents only'
+                }
+              >
+                <Globe size={14} />
+                <span>Search</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mode-toggle-pill-inside ${thinkModeEnabled ? 'think-active' : ''}`}
+                onClick={() => setThinkModeEnabled((prev) => !prev)}
+                title={
+                  thinkModeEnabled
+                    ? '🧠 Deep Think is ON — Full Adaptive Self-RAG verification'
+                    : '⚡ Deep Think is OFF — Fast single-pass response'
+                }
+              >
+                <Brain size={14} />
+                <span>Think</span>
+              </button>
+
+              <button
+                type="submit"
+                className="send-btn"
+                disabled={isLoading || !input.trim()}
+                title="Send question"
+              >
+                <Send size={16} />
+              </button>
+            </div>
           </form>
         </div>
       </main>
