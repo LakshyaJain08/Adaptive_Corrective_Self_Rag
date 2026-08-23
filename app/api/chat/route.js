@@ -90,8 +90,9 @@ export async function POST(request) {
       );
     }
 
-    // Execute RAG Pipeline
-    const result = await executeRagPipeline(question);
+    // Execute RAG Pipeline with per-chat documents filter
+    const documentsList = Array.isArray(body.documents) ? body.documents : null;
+    const result = await executeRagPipeline(question, documentsList);
 
     if (result.error) {
       return NextResponse.json(

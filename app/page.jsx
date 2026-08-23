@@ -17,6 +17,8 @@ import {
   Edit2,
   Check,
   X,
+  BookOpen,
+  Paperclip,
 } from 'lucide-react';
 
 function renderInline(text) {
@@ -236,11 +238,16 @@ export default function Home() {
       if (savedChats) {
         const parsed = JSON.parse(savedChats);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setChats(parsed);
-          if (savedActiveId && parsed.some((c) => c.id === savedActiveId)) {
+          // Ensure every chat has a documents array
+          const sanitized = parsed.map((c) => ({
+            ...c,
+            documents: Array.isArray(c.documents) ? c.documents : [],
+          }));
+          setChats(sanitized);
+          if (savedActiveId && sanitized.some((c) => c.id === savedActiveId)) {
             setActiveChatId(savedActiveId);
           } else {
-            setActiveChatId(parsed[0].id);
+            setActiveChatId(sanitized[0].id);
           }
           return;
         }
@@ -257,6 +264,7 @@ export default function Home() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [],
+      documents: [],
     };
     setChats([initialChat]);
     setActiveChatId(initialId);
@@ -284,6 +292,7 @@ export default function Home() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [],
+      documents: [],
     };
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newId);
@@ -333,6 +342,7 @@ export default function Home() {
           createdAt: Date.now(),
           updatedAt: Date.now(),
           messages: [],
+          documents: [],
         };
         setActiveChatId(freshId);
         return [freshChat];
@@ -353,6 +363,20 @@ export default function Home() {
       prev.map((chat) =>
         chat.id === activeChatId ? { ...chat, messages: [], updatedAt: Date.now() } : chat
       )
+    );
+  };
+
+  const handleRemoveDocFromChat = (docName) => {
+    if (!activeChatId) return;
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id === activeChatId) {
+          const currentDocs = chat.documents || [];
+          const filtered = currentDocs.filter((d) => d !== docName);
+          return { ...chat, documents: filtered, updatedAt: Date.now() };
+        }
+        return chat;
+      })
     );
   };
 
@@ -398,18 +422,8 @@ export default function Home() {
     }
   };
 
-  const handleDeleteDocument = async (filename) => {
-    try {
-      await axios.delete(`/api/documents/${encodeURIComponent(filename)}`);
-      fetchDocuments();
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      alert('Failed to delete file.');
-    }
-  };
-
   const uploadFiles = async (fileList) => {
-    if (!fileList || !fileList.length) return;
+    if (!fileList || !fileList.length || !activeChatId) return;
 
     const formData = new FormData();
     for (let i = 0; i < fileList.length; i++) {
@@ -420,9 +434,22 @@ export default function Home() {
 
     setIsUploading(true);
     try {
-      await axios.post('/api/upload', formData, {
+      const res = await axios.post('/api/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      const uploadedNames = res.data.files || [];
+
+      // Link newly uploaded files specifically to the active chat
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id === activeChatId) {
+            const currentDocs = chat.documents || [];
+            const merged = Array.from(new Set([...currentDocs, ...uploadedNames]));
+            return { ...chat, documents: merged, updatedAt: Date.now() };
+          }
+          return chat;
+        })
+      );
       await fetchDocuments();
     } catch (error) {
       console.error('Upload failed:', error);
@@ -458,14 +485,12 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    if (documents.length === 0) {
-      alert('Please upload at least one PDF document first.');
-      return;
-    }
-
     const currentId = activeChatId;
     const queryText = input.trim();
     const userMessage = { role: 'user', content: queryText };
+    const currentChat = chats.find((c) => c.id === currentId);
+    const chatDocs = currentChat?.documents || [];
+
     setInput('');
     setIsLoading(true);
 
@@ -491,7 +516,10 @@ export default function Home() {
     );
 
     try {
-      const response = await axios.post('/api/chat', { question: queryText });
+      const response = await axios.post('/api/chat', {
+        question: queryText,
+        documents: chatDocs,
+      });
 
       const aiMessage = {
         role: 'ai',
@@ -724,15 +752,16 @@ export default function Home() {
         </button>
 
         {/* Chat Conversations Section */}
-        <div className="sidebar-section">
+        <div className="sidebar-section" style={{ flexGrow: 1, minHeight: 0 }}>
           <div className="sidebar-section-header">
             <span>Conversations ({chats.length})</span>
           </div>
 
-          <div className="chat-list">
+          <div className="chat-list" style={{ flexGrow: 1, maxHeight: 'none' }}>
             {chats.map((chat) => {
               const isActive = chat.id === activeChatId;
               const isEditing = chat.id === editingChatId;
+              const docCount = chat.documents?.length || 0;
 
               return (
                 <div
@@ -744,7 +773,7 @@ export default function Home() {
                     <MessageSquare
                       size={15}
                       color={isActive ? '#818CF8' : '#a1a1aa'}
-                      style={{ flexShrink: 0 }}
+                      style={{ flexShrink: 0, marginTop: docCount > 0 ? '2px' : '0' }}
                     />
                     {isEditing ? (
                       <form
@@ -785,9 +814,16 @@ export default function Home() {
                         </button>
                       </form>
                     ) : (
-                      <span className="chat-item-title" title={chat.title}>
-                        {chat.title}
-                      </span>
+                      <div className="chat-item-content">
+                        <span className="chat-item-title" title={chat.title}>
+                          {chat.title}
+                        </span>
+                        {docCount > 0 && (
+                          <span className="chat-doc-badge">
+                            <Paperclip size={10} /> {docCount} doc{docCount > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -814,80 +850,6 @@ export default function Home() {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Knowledge Base Document List */}
-        <div className="sidebar-section" style={{ flexGrow: 1, minHeight: 0 }}>
-          <div className="sidebar-section-header">
-            <span>Knowledge Base ({documents.length})</span>
-          </div>
-
-          <div className="doc-list">
-            {documents.map((doc, idx) => (
-              <div
-                key={idx}
-                className="doc-item"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <FileText size={16} color="#818CF8" style={{ flexShrink: 0 }} />
-                  <span
-                    style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {doc}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteDocument(doc);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--danger)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0.25rem',
-                    opacity: 0.8,
-                    transition: 'opacity 0.2s',
-                  }}
-                  title="Delete document"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-            {documents.length === 0 && (
-              <p
-                style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary)',
-                  fontStyle: 'italic',
-                  padding: '0.5rem 0',
-                }}
-              >
-                No documents uploaded yet. Click + in prompt to attach.
-              </p>
-            )}
           </div>
         </div>
       </aside>
@@ -945,6 +907,37 @@ export default function Home() {
             )}
           </div>
         </header>
+
+        {/* Per-Chat Knowledge Base Bar */}
+        <div className="chat-kb-bar">
+          <div className="chat-kb-title">
+            <BookOpen size={14} color="#818cf8" />
+            <span>Knowledge Base ({(activeChat?.documents || []).length})</span>
+          </div>
+
+          <div className="chat-kb-doc-tags">
+            {(activeChat?.documents || []).map((doc, dIdx) => (
+              <div key={dIdx} className="chat-kb-tag" title={doc}>
+                <FileText size={12} color="#818cf8" style={{ flexShrink: 0 }} />
+                <span className="chat-kb-tag-name">{doc}</span>
+                <button
+                  type="button"
+                  className="chat-kb-tag-remove"
+                  onClick={() => handleRemoveDocFromChat(doc)}
+                  title={`Remove ${doc} from this chat`}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+
+            {(!activeChat?.documents || activeChat.documents.length === 0) && (
+              <span className="chat-kb-empty">
+                No documents attached to this chat. Click <strong style={{ color: '#818cf8' }}>+</strong> below to attach PDF knowledge.
+              </span>
+            )}
+          </div>
+        </div>
 
         <div className="messages">
           {messages.length === 0 ? (
@@ -1090,9 +1083,9 @@ export default function Home() {
               type="text"
               className="input-field"
               placeholder={
-                documents.length === 0
-                  ? 'Click + or drag PDF to add documents, then ask anything...'
-                  : 'Ask a question about your documents...'
+                (activeChat?.documents?.length || 0) === 0
+                  ? 'Click + or drag PDF to attach documents to this chat, or ask anything...'
+                  : 'Ask a question about this chat\'s documents...'
               }
               value={input}
               onChange={(e) => setInput(e.target.value)}

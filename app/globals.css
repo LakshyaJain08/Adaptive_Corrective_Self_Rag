@@ -174,7 +174,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.55rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
@@ -201,8 +201,15 @@ body {
   flex-grow: 1;
 }
 
+.chat-item-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
 .chat-item-title {
-  font-size: 0.84rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -212,6 +219,15 @@ body {
 .chat-item.active .chat-item-title {
   color: #fff;
   font-weight: 500;
+}
+
+.chat-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  color: #a5b4fc;
+  opacity: 0.85;
 }
 
 .chat-item-actions {
@@ -260,6 +276,91 @@ body {
   width: 100%;
   outline: none;
   font-family: inherit;
+}
+
+/* Chat Knowledge Base Bar (Per-Chat) */
+.chat-kb-bar {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 0.55rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 42px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-kb-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.chat-kb-doc-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex-grow: 1;
+}
+
+.chat-kb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  max-width: 220px;
+  transition: all 0.15s ease;
+}
+
+.chat-kb-tag:hover {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.chat-kb-tag-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-kb-tag-remove {
+  background: none;
+  border: none;
+  color: #a5b4fc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.chat-kb-tag-remove:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.chat-kb-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 /* File Upload Area */
