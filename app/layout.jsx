@@ -5,6 +5,14 @@ export const metadata = {
   description: 'AI-Powered Document Intelligence Platform with Adaptive Corrective Self-RAG',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-visual',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">

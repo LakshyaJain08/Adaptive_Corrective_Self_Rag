@@ -850,6 +850,14 @@ export default function Home() {
       className="app-container"
       style={{ cursor: isResizing ? 'col-resize' : 'default' }}
     >
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={`sidebar ${isSidebarOpen ? '' : 'closed'}`}
