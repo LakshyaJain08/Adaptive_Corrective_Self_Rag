@@ -221,7 +221,7 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -232,6 +232,24 @@ export default function Home() {
   const fileInputRef = useRef(null);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  // Auto-close sidebar when clicking anywhere outside the sidebar
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!isSidebarOpen) return;
+
+      const isInsideSidebar = e.target.closest('.sidebar');
+      const isToggleButton = e.target.closest('.sidebar-toggle-btn');
+      const isResizer = e.target.closest('.resizer');
+
+      if (!isInsideSidebar && !isToggleButton && !isResizer) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isSidebarOpen]);
 
   // Close 3-dots dropdown menu when clicking outside
   useEffect(() => {
