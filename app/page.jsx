@@ -510,17 +510,25 @@ export default function Home() {
     setIsDragOver(false);
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const handleSendMessage = async (e, customQuery = null, webSearchOverride = null) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const queryText = (customQuery !== null ? customQuery : input).trim();
+    if (!queryText || isLoading) return;
 
     const currentId = activeChatId;
-    const queryText = input.trim();
     const userMessage = { role: 'user', content: queryText };
     const currentChat = chats.find((c) => c.id === currentId);
     const chatDocs = currentChat?.documents || [];
+    const history = (currentChat?.messages || []).slice(-4).map((m) => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content,
+    }));
 
-    setInput('');
+    const useWebSearch = webSearchOverride !== null ? webSearchOverride : webSearchEnabled;
+
+    if (customQuery === null) {
+      setInput('');
+    }
     setIsLoading(true);
 
     // Append user message & auto-update title from "New Chat" to query preview
@@ -548,13 +556,15 @@ export default function Home() {
       const response = await axios.post('/api/chat', {
         question: queryText,
         documents: chatDocs,
-        webSearch: webSearchEnabled,
+        webSearch: useWebSearch,
         thinkMode: thinkModeEnabled,
+        history,
       });
 
       const aiMessage = {
         role: 'ai',
         content: response.data.answer,
+        userQuestion: queryText,
         metadata: {
           confidence: response.data.confidence_scores?.overall_confidence || 0,
           intent: response.data.intent,
@@ -563,6 +573,7 @@ export default function Home() {
           claims: response.data.claims || [],
           claimVerdicts: response.data.claim_verdicts || [],
           retrievalQuery: response.data.retrieval_query,
+          effectiveQuery: response.data.effective_query,
           vectorResults: response.data.vector_results,
           bm25Results: response.data.bm25_results,
           rrfResults: response.data.rrf_results,
@@ -573,6 +584,8 @@ export default function Home() {
           webSources: response.data.web_sources || [],
           webSearchEnabled: response.data.web_search_enabled !== false,
           thinkModeEnabled: response.data.think_mode_enabled !== false,
+          webSearchRequired: response.data.web_search_required || false,
+          userQuestion: queryText,
           supportedClaims: response.data.supported_claims,
           unsupportedClaims: response.data.unsupported_claims,
           needRetrieval: response.data.need_retrieval,
@@ -609,6 +622,13 @@ export default function Home() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEnableWebAndRetry = (query) => {
+    setWebSearchEnabled(true);
+    if (query) {
+      handleSendMessage(null, query, true);
     }
   };
 
@@ -1113,6 +1133,30 @@ export default function Home() {
                   }}
                 >
                   {renderFormattedText(msg.content)}
+                  {(msg.metadata?.webSearchRequired ||
+                    msg.metadata?.verdict?.includes('OFF') ||
+                    msg.metadata?.verdict?.includes('Disabled')) && (
+                    <div
+                      style={{
+                        marginTop: '0.85rem',
+                        paddingTop: '0.75rem',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="web-search-retry-btn"
+                        onClick={() =>
+                          handleEnableWebAndRetry(
+                            msg.metadata?.userQuestion || msg.userQuestion
+                          )
+                        }
+                      >
+                        <Globe size={14} />
+                        <span>Enable 🌐 Web Search & Retry</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {msg.metadata && (

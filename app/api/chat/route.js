@@ -90,15 +90,21 @@ export async function POST(request) {
       );
     }
 
-    // Execute RAG Pipeline with per-chat documents filter and feature toggles
+    // Execute RAG Pipeline with per-chat documents filter, feature toggles, and conversation history
     const documentsList = Array.isArray(body.documents) ? body.documents : null;
+    const history = Array.isArray(body.history) ? body.history : [];
     const webSearch = body.webSearch !== false;
     const thinkMode = body.thinkMode !== false;
 
-    const result = await executeRagPipeline(question, documentsList, {
-      webSearch,
-      thinkMode,
-    });
+    const result = await executeRagPipeline(
+      question,
+      documentsList,
+      {
+        webSearch,
+        thinkMode,
+      },
+      history
+    );
 
     if (result.error) {
       return NextResponse.json(
