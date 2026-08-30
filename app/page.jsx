@@ -1,3 +1,71 @@
+function AcsragLogo({ size = 22, className = '', style = {} }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`acsrag-logo-svg ${className}`}
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, ...style }}
+    >
+      <defs>
+        <linearGradient id="lensGrad" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#818CF8" />
+          <stop offset="50%" stopColor="#6366F1" />
+          <stop offset="100%" stopColor="#06B6D4" />
+        </linearGradient>
+        <linearGradient id="sparkGrad" x1="7" y1="7" x2="19" y2="19" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="50%" stopColor="#60A5FA" />
+          <stop offset="100%" stopColor="#A855F7" />
+        </linearGradient>
+        <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* Magnifying Lens Outer Ring */}
+      <circle
+        cx="13"
+        cy="13"
+        r="9.5"
+        stroke="url(#lensGrad)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+
+      {/* Precision Scanning Crosshairs / Reticle lines */}
+      <line x1="13" y1="5.5" x2="13" y2="7.5" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" opacity="0.85" />
+      <line x1="13" y1="18.5" x2="13" y2="20.5" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" opacity="0.85" />
+      <line x1="5.5" y1="13" x2="7.5" y2="13" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" opacity="0.85" />
+      <line x1="18.5" y1="13" x2="20.5" y2="13" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" opacity="0.85" />
+
+      {/* Central 4-Point Neural Spark (Self-RAG Core) */}
+      <path
+        d="M13 8.5C13 11 10.5 13 8.5 13C10.5 13 13 15 13 17.5C13 15 15.5 13 17.5 13C15.5 13 13 11 13 8.5Z"
+        fill="url(#sparkGrad)"
+        filter="url(#glowFilter)"
+      />
+      {/* Central Pinpoint Core */}
+      <circle cx="13" cy="13" r="1.3" fill="#FFFFFF" />
+
+      {/* Modern Angled Handle with Cyber Joint */}
+      <line
+        x1="20"
+        y1="20"
+        x2="28"
+        y2="28"
+        stroke="url(#lensGrad)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <circle cx="20" cy="20" r="1.2" fill="#38BDF8" />
+    </svg>
+  );
+}
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -865,7 +933,7 @@ export default function Home() {
       >
         <div className="sidebar-header">
           <h2>
-            <Sparkles size={20} color="#6366F1" /> ACSRAG Brain
+            <AcsragLogo size={22} /> ACSRAG Brain
           </h2>
           <button
             type="button"
@@ -1140,7 +1208,7 @@ export default function Home() {
                 gap: '0.75rem',
               }}
             >
-              <Sparkles size={48} opacity={0.25} color="#6366f1" />
+              <AcsragLogo size={52} opacity={0.8} />
               <p style={{ fontSize: '1.05rem', fontWeight: 500 }}>
                 Welcome to ACSRAG!
               </p>
