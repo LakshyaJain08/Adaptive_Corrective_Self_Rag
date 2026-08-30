@@ -1,3 +1,35 @@
+'use client';
+
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
+import {
+  UploadCloud,
+  FileText,
+  Send,
+  Sparkles,
+  AlertCircle,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Layers,
+  Plus,
+  Edit2,
+  Check,
+  X,
+  BookOpen,
+  Paperclip,
+  PanelLeft,
+  PanelLeftClose,
+  SquarePen,
+  Globe,
+  Brain,
+  Zap,
+  MoreHorizontal,
+  Pencil,
+  Share2,
+} from 'lucide-react';
+
 function AcsragLogo({ size = 22, className = '', style = {} }) {
   return (
     <svg
@@ -66,36 +98,6 @@ function AcsragLogo({ size = 22, className = '', style = {} }) {
   );
 }
 
-'use client';
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
-import {
-  UploadCloud,
-  FileText,
-  Send,
-  Sparkles,
-  AlertCircle,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Layers,
-  Plus,
-  Edit2,
-  Check,
-  X,
-  BookOpen,
-  Paperclip,
-  PanelLeft,
-  PanelLeftClose,
-  SquarePen,
-  Globe,
-  Brain,
-  Zap,
-  MoreHorizontal,
-  Pencil,
-  Share2,
-} from 'lucide-react';
 
 function renderInline(text) {
   if (!text || typeof text !== 'string') return text;
