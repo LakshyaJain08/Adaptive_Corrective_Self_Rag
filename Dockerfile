@@ -1,4 +1,4 @@
-﻿# Multi-stage Dockerfile for Next.js ACSRAG Standalone Production Build
+# Multi-stage Dockerfile for Next.js ACSRAG Standalone Production Build
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat curl
 
@@ -26,13 +26,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
-ENV HOSTNAME= 0.0.0.0
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy static assets and documents
-COPY --from=builder /app/public ./public
+# Create public dir and copy documents
+RUN mkdir -p public
 COPY --from=builder /app/documents ./documents
 
 # Set up runtime cache directory
@@ -47,7 +47,6 @@ USER nextjs
 EXPOSE 3000
 
 # Health check probe against /api/health
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3   CMD curl -f http://localhost:3000/api/health || exit 1
 
-CMD [node, server.js]
+CMD ["node", "server.js"]
