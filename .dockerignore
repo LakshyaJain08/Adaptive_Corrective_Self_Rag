@@ -1,0 +1,14 @@
+﻿node_modules
+.next
+.git
+.gitignore
+.env*.local
+venv
+.venv
+__pycache__
+*.pyc
+*.pkl
+faiss_index_cache*
+chunks_cache*
+*.log
+.DS_Store

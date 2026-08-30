@@ -1,0 +1,33 @@
+﻿version: '3.8'
+
+services:
+  acsrag-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acsrag_container
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - GOOGLE_API_KEY=
+      - TAVILY_API_KEY=
+      - PORT=3000
+    volumes:
+      - ./documents:/app/documents
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:3000/api/health]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
